@@ -1,0 +1,10 @@
+app:
+  port: 9000
+
+db:
+  driver: "mysql"
+  host: "localhost"
+  port: 3306
+  username: "Arima_kishou0"
+  password: "My_secrete_passw0rd"
+  databaseName: "banking"

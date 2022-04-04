@@ -2,10 +2,10 @@ package main
 
 import (
 	"code-bangkok/handler"
+	"code-bangkok/logger"
 	"code-bangkok/repository"
 	"code-bangkok/service"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -31,8 +31,11 @@ func initializeDatabase() *sqlx.DB {
 		viper.GetString("db.host"),
 		viper.GetString("db.databaseName"),
 	)
+
+	logger.Info("Open a database connection to " + datasourceName)
 	db, err := sqlx.Open(viper.GetString("db.driver"), datasourceName)
 	if err != nil {
+		logger.Error(err)
 		panic(err)
 	}
 	db.SetConnMaxLifetime(3 * time.Minute)
@@ -51,6 +54,7 @@ func init() {
 
 	err := viper.ReadInConfig()
 	if err != nil {
+		logger.Error(err)
 		panic(err)
 	}
 
@@ -58,9 +62,10 @@ func init() {
 }
 
 func main() {
+	logger.Info("Start main..")
 	start := time.Now()
 	defer func() {
-		fmt.Println("Execution Time: ", time.Since(start))
+		logger.Info("Execution Time: " + time.Since(start).String())
 	}()
 
 	db := initializeDatabase()
@@ -71,11 +76,18 @@ func main() {
 	customerService := service.NewCustomerService(customerRepository)
 	customerHandler := handler.NewCustomerHandler(customerService)
 
+	accountRepositoryDB := repository.NewAccountRepositoryDB(db)
+	accountService := service.NewAccountService(accountRepositoryDB)
+	accountHandler := handler.NewAccountHandler(accountService)
+
 	router := mux.NewRouter()
 	router.HandleFunc("/customers", customerHandler.GetCustomers).Methods(http.MethodGet)
 	router.HandleFunc("/customers/{customerID:[0-9]+}", customerHandler.GetACustomer).Methods(http.MethodGet)
 
+	router.HandleFunc("/customers/{customerID:[0-9]+}/accounts", accountHandler.GetAccounts).Methods(http.MethodGet)
+	router.HandleFunc("/customers/{customerID:[0-9]+}/accounts", accountHandler.NewAccount).Methods(http.MethodPost)
+
 	port := fmt.Sprintf(":%d", viper.GetInt("app.port"))
-	log.Printf("Start server at port %d\n", viper.GetInt("app.port"))
+	logger.Info("Start server at port " + viper.GetString("app.port"))
 	http.ListenAndServe(port, router)
 }

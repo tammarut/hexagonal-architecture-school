@@ -18,8 +18,7 @@ type customerHandler struct {
 func (this customerHandler) GetCustomers(writer http.ResponseWriter, req *http.Request) {
 	customers, err := this.customerService.GetCustomers()
 	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(writer, err)
+		handleError(writer, err)
 		return
 	}
 	fmt.Println("⏰Sleeping..")
@@ -39,8 +38,7 @@ func (this customerHandler) GetACustomer(writer http.ResponseWriter, req *http.R
 
 	aCustomer, err := this.customerService.GetACustomer(customerID)
 	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(writer, err)
+		handleError(writer, err)
 		return
 	}
 	writer.Header().Set("content-type", "application/json")

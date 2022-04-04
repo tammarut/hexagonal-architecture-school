@@ -1,10 +1,10 @@
 package service
 
 import (
+	"code-bangkok/errs"
+	"code-bangkok/logger"
 	"code-bangkok/repository"
 	"database/sql"
-	"errors"
-	"log"
 )
 
 func buildResponses(customers []repository.Customer) []CustomerResponse {
@@ -27,8 +27,8 @@ type customerService struct {
 func (this customerService) GetCustomers() ([]CustomerResponse, error) {
 	customers, err := this.customerRepo.GetAll()
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		logger.Error(err)
+		return nil, errs.NewUnexpectedError()
 	}
 	customerResponses := buildResponses(customers)
 	return customerResponses, nil
@@ -38,10 +38,10 @@ func (this customerService) GetACustomer(customerId int) (*CustomerResponse, err
 	aCustomer, err := this.customerRepo.GetById(customerId)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.New("Customer not found❌")
+			return nil, errs.NewNotFoundError("Customer not found❌")
 		}
-		log.Println(err)
-		return nil, err
+		logger.Error(err)
+		return nil, errs.NewUnexpectedError()
 	}
 	customerResponse := CustomerResponse{
 		CustomerID: aCustomer.CustomerID,
